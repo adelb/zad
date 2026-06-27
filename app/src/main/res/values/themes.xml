@@ -1,10 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-      Edge-to-edge: window draws under the system bars. We then handle insets in
-      Compose so content never lives under the notch / nav bar. The visible
-      "sectors" disappear because the status / nav bars are transparent.
+      Launch theme: solid night ground, NO icon. The system reserves the
+      animated-icon slot but our drawable is transparent, so nothing draws.
+      After Activity creates, we hand off to Theme.Zad and our Compose
+      SplashScreen draws the pouch live. No icon flash.
     -->
+    <style name="Theme.Zad.Launch" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/night</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_blank</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/night</item>
+        <item name="postSplashScreenTheme">@style/Theme.Zad</item>
+    </style>
+
     <style name="Theme.Zad" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@color/paper</item>
         <item name="android:statusBarColor">@android:color/transparent</item>

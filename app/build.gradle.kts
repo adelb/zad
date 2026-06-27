@@ -94,6 +94,10 @@ dependencies {
     // EXIF
     implementation("androidx.exifinterface:exifinterface:1.3.7")
 
+    // Android 12 SplashScreen — used so the first frame is our night ground,
+    // not the system's default white launcher flash.
+    implementation("androidx.core:core-splashscreen:1.0.1")
+
     // Health Connect — read active calories burned from any health app on the device
     implementation("androidx.health.connect:connect-client:1.1.0-alpha07")
 
