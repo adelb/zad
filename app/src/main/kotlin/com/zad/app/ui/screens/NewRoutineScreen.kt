@@ -197,11 +197,19 @@ private fun Stepper(value: Int, onUp: () -> Unit, onDown: () -> Unit, suffix: St
 @Composable
 fun ExercisePickerSheet(onDismiss: () -> Unit, onPick: (Exercise) -> Unit) {
     var query by remember { mutableStateOf("") }
+    var selectedMuscle by remember { mutableStateOf<MuscleGroup?>(null) }
     val all = remember { ExerciseCatalog.ALL }
-    val filtered = remember(query) {
-        if (query.isBlank()) all
-        else all.filter { it.nameAr.contains(query.trim()) || it.id.contains(query.trim(), true) }
+    val filtered = remember(query, selectedMuscle) {
+        all.filter { ex ->
+            val matchesMuscle = selectedMuscle == null || ex.muscleGroup == selectedMuscle
+            val matchesQuery = query.isBlank() ||
+                ex.nameAr.contains(query.trim()) ||
+                ex.id.contains(query.trim(), true)
+            matchesMuscle && matchesQuery
+        }
     }
+    val groups = remember(filtered) { filtered.groupBy { it.muscleGroup } }
+
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
             Text(
@@ -215,23 +223,51 @@ fun ExercisePickerSheet(onDismiss: () -> Unit, onPick: (Exercise) -> Unit) {
                 placeholder = { Text(stringResource(R.string.picker_search)) },
                 singleLine = true
             )
+            Spacer(Modifier.height(10.dp))
+
+            // muscle filter chips — scroll horizontally
+            androidx.compose.foundation.lazy.LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                item {
+                    androidx.compose.material3.FilterChip(
+                        selected = selectedMuscle == null,
+                        onClick = { selectedMuscle = null },
+                        label = { Text("الكل") }
+                    )
+                }
+                items(MuscleGroup.values().toList()) { g ->
+                    androidx.compose.material3.FilterChip(
+                        selected = selectedMuscle == g,
+                        onClick = { selectedMuscle = if (selectedMuscle == g) null else g },
+                        label = { Text(g.arabicLabel) }
+                    )
+                }
+            }
             Spacer(Modifier.height(8.dp))
-            LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 480.dp)) {
-                items(filtered, key = { it.id }) { ex ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onPick(ex) }
-                            .padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(ex.nameAr, style = MaterialTheme.typography.titleMedium)
-                        Spacer(Modifier.weight(1f))
-                        Text(ex.muscleGroup.arabicLabel,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+            LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 520.dp)) {
+                groups.forEach { (group, exs) ->
+                    item(key = "h-${group.name}") {
+                        Text(
+                            group.arabicLabel,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
+                        )
                     }
-                    Divider()
+                    items(exs, key = { it.id }) { ex ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onPick(ex) }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(ex.nameAr, style = MaterialTheme.typography.titleMedium)
+                        }
+                        Divider()
+                    }
                 }
             }
             Spacer(Modifier.height(8.dp))

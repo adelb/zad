@@ -169,4 +169,21 @@
     <string name="stats_body_weight">وزن الجسم</string>
     <string name="stats_lift_progress">منحنى الأوزان المرفوعة</string>
     <string name="stats_no_data">لا توجد بيانات كافية بعد</string>
+
+    <!-- Live watch + net calories + projected weight -->
+    <string name="watch_live">قراءة من الساعة</string>
+    <string name="watch_steps">خطوات</string>
+    <string name="watch_distance">مسافة</string>
+    <string name="watch_active_kcal">سعرات نشطة</string>
+    <string name="watch_total_kcal">إجمالي السعرات</string>
+    <string name="watch_exercise_min">دقائق نشاط</string>
+    <string name="watch_updated">آخر تحديث</string>
+    <string name="net_intake">صافي السعرات</string>
+    <string name="net_remaining">المتبقّي بعد الحرق</string>
+    <string name="net_surplus">فائض</string>
+    <string name="net_deficit">عجز</string>
+    <string name="projected_weight_today">توقّع نهاية اليوم</string>
+    <string name="projected_loss">خسارة وزن</string>
+    <string name="projected_gain">زيادة وزن</string>
+    <string name="estimate_note">تقدير تقريبي — يعتمد على معدل الأيض ومستوى نشاطك</string>
 </resources>

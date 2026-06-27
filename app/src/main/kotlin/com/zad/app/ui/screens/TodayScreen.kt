@@ -49,7 +49,14 @@ fun TodayScreen(
     val hcLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         vm.healthBridge.permissionContract()
     ) { vm.refreshHealthConnect() }
-    androidx.compose.runtime.LaunchedEffect(Unit) { vm.refreshHealthConnect() }
+
+    // Real-time-ish: refresh every 30s while this screen is in the foreground
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        while (true) {
+            vm.refreshHealthConnect()
+            kotlinx.coroutines.delay(30_000)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -76,26 +83,30 @@ fun TodayScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(16.dp))
 
-        BudgetCard(profile = profile, consumed = total)
-
-        Spacer(Modifier.height(12.dp))
-
         OverBudgetBanner(profile = profile, consumed = total, entries = entries)
 
         WeighInPrompt(latestMs = latestWeight?.recordedAtMs, onClick = onOpenWeight)
 
         Spacer(Modifier.height(16.dp))
 
-        HealthBurnRow(
+        val balance = com.zad.app.ml.EnergyBalanceCalc.compute(
+            profile = profile,
+            consumed = total,
             workoutBurn = burnFromWorkouts,
-            healthBurn = hc.activeKcal,
-            steps = hc.steps,
-            hcStatus = hc.status,
-            granted = hc.granted,
-            onConnect = {
-                hcLauncher.launch(vm.healthBridge.permissions)
-            }
+            watchActiveBurn = hc.activeKcal
         )
+
+        NetIntakeCard(balance = balance)
+        Spacer(Modifier.height(12.dp))
+
+        WatchLiveCard(
+            hc = hc,
+            workoutBurn = burnFromWorkouts,
+            onConnect = { hcLauncher.launch(vm.healthBridge.permissions) }
+        )
+        Spacer(Modifier.height(12.dp))
+
+        ProjectedWeightCard(balance = balance)
 
         Spacer(Modifier.height(16.dp))
 
@@ -257,73 +268,185 @@ private fun OverBudgetBanner(profile: Profile?, consumed: Int, entries: List<Mea
 }
 
 @Composable
-private fun HealthBurnRow(
+private fun NetIntakeCard(balance: com.zad.app.ml.EnergyBalance) {
+    Surface(
+        color = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(Modifier.padding(18.dp)) {
+            Text(stringResource(R.string.net_intake),
+                style = MaterialTheme.typography.labelLarge)
+            Spacer(Modifier.height(4.dp))
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text("${balance.netIntake}",
+                    style = MaterialTheme.typography.displayMedium)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.result_kcal),
+                    style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.weight(1f))
+                Text(
+                    "/ ${balance.targetKcal}",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            Row {
+                Text("أكلت: ${balance.consumed}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f))
+                Spacer(Modifier.weight(1f))
+                Text("− حرق: ${balance.workoutBurn + balance.watchActiveBurn}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun WatchLiveCard(
+    hc: com.zad.app.health.HcReading,
     workoutBurn: Int,
-    healthBurn: Int,
-    steps: Int,
-    hcStatus: com.zad.app.health.HcStatus,
-    granted: Boolean,
     onConnect: () -> Unit
 ) {
-    val totalBurn = workoutBurn + healthBurn
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.watch_live),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f))
+                if (hc.granted) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.secondary,
+                        contentColor = MaterialTheme.colorScheme.onSecondary,
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text(
+                            "مباشر",
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+
+            if (hc.granted) {
+                Spacer(Modifier.height(12.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Stat(stringResource(R.string.watch_active_kcal), "${hc.activeKcal}", Modifier.weight(1f))
+                    Stat(stringResource(R.string.watch_steps), "${hc.steps}", Modifier.weight(1f))
+                }
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Stat(
+                        stringResource(R.string.watch_distance),
+                        if (hc.distanceMeters > 999) "${"%.1f".format(hc.distanceMeters / 1000.0)} كم"
+                        else "${hc.distanceMeters} م",
+                        Modifier.weight(1f)
+                    )
+                    Stat(stringResource(R.string.watch_exercise_min),
+                        "${hc.exerciseMinutes} د", Modifier.weight(1f))
+                }
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    "تمارين زاد: $workoutBurn سعرة · ساعتك: ${hc.activeKcal} سعرة",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                Spacer(Modifier.height(10.dp))
+                when (hc.status) {
+                    com.zad.app.health.HcStatus.AVAILABLE -> {
+                        OutlinedButton(onClick = onConnect, modifier = Modifier.fillMaxWidth()) {
+                            Text("اربط بـ Health Connect")
+                        }
+                    }
+                    com.zad.app.health.HcStatus.NEEDS_UPDATE -> {
+                        Text("حدّث Health Connect من متجر Play",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.tertiary)
+                    }
+                    com.zad.app.health.HcStatus.NOT_INSTALLED -> {
+                        Text("ثبّت Health Connect من متجر Play. أجهزة Huawei قد لا تكتب لـ HC مباشرة.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.tertiary)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun Stat(label: String, value: String, modifier: Modifier = Modifier) {
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(14.dp),
+        modifier = modifier
+    ) {
+        Column(Modifier.padding(12.dp)) {
+            Text(label, style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(2.dp))
+            Text(value, style = MaterialTheme.typography.titleLarge)
+        }
+    }
+}
+
+@Composable
+private fun ProjectedWeightCard(balance: com.zad.app.ml.EnergyBalance) {
+    val absKg = kotlin.math.abs(balance.projectedKgChange)
+    val grams = (absKg * 1000).toInt()
+    val isLoss = !balance.isSurplus
+    val tint = if (isLoss) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.tertiary
+
     Surface(
         color = MaterialTheme.colorScheme.surfaceVariant,
         shape = RoundedCornerShape(18.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(Modifier.padding(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("سعرات محروقة اليوم",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f))
+        Column(Modifier.padding(16.dp)) {
+            Text(stringResource(R.string.projected_weight_today),
+                style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(6.dp))
+            Row(verticalAlignment = Alignment.Bottom) {
                 Text(
-                    "$totalBurn سعرة",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.secondary
+                    if (isLoss) "↓" else "↑",
+                    style = MaterialTheme.typography.displaySmall,
+                    color = tint
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    if (grams >= 1) "$grams غرام" else "—",
+                    style = MaterialTheme.typography.displaySmall
+                )
+                Spacer(Modifier.weight(1f))
+                Text(
+                    if (isLoss) stringResource(R.string.projected_loss)
+                    else stringResource(R.string.projected_gain),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = tint
                 )
             }
-            Spacer(Modifier.height(6.dp))
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("التمارين: $workoutBurn",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("الساعة/الصحة: $healthBurn",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (steps > 0) {
-                    Text("خطوات: $steps",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            if (!granted) {
-                Spacer(Modifier.height(8.dp))
-                when (hcStatus) {
-                    com.zad.app.health.HcStatus.AVAILABLE -> {
-                        OutlinedButton(onClick = onConnect, modifier = Modifier.fillMaxWidth()) {
-                            Text("اربط بـ Health Connect لقراءة السعرات من ساعتك")
-                        }
-                    }
-                    com.zad.app.health.HcStatus.NEEDS_UPDATE -> {
-                        Text(
-                            "حدّث تطبيق Health Connect من متجر Play لقراءة بيانات الساعة",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.tertiary
-                        )
-                    }
-                    com.zad.app.health.HcStatus.NOT_INSTALLED -> {
-                        Text(
-                            "Health Connect غير مثبّت — ثبّته من متجر Play لقراءة سعرات الساعة. " +
-                            "أجهزة Huawei قد لا تكتب لـ Health Connect مباشرة.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.tertiary
-                        )
-                    }
-                }
-            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                stringResource(R.string.estimate_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
