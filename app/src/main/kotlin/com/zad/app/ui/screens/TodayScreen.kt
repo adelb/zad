@@ -44,6 +44,12 @@ fun TodayScreen(
     val profile by vm.profile.collectAsStateWithLifecycle()
     val waterMl by vm.todayWaterMl.collectAsStateWithLifecycle()
     val latestWeight by vm.latestWeight.collectAsStateWithLifecycle()
+    val burnFromWorkouts by vm.caloriesBurnedToday.collectAsStateWithLifecycle()
+    val hc by vm.healthReading.collectAsStateWithLifecycle()
+    val hcLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        vm.healthBridge.permissionContract()
+    ) { vm.refreshHealthConnect() }
+    androidx.compose.runtime.LaunchedEffect(Unit) { vm.refreshHealthConnect() }
 
     Column(
         modifier = Modifier
@@ -77,6 +83,19 @@ fun TodayScreen(
         OverBudgetBanner(profile = profile, consumed = total, entries = entries)
 
         WeighInPrompt(latestMs = latestWeight?.recordedAtMs, onClick = onOpenWeight)
+
+        Spacer(Modifier.height(16.dp))
+
+        HealthBurnRow(
+            workoutBurn = burnFromWorkouts,
+            healthBurn = hc.activeKcal,
+            steps = hc.steps,
+            hcStatus = hc.status,
+            granted = hc.granted,
+            onConnect = {
+                hcLauncher.launch(vm.healthBridge.permissions)
+            }
+        )
 
         Spacer(Modifier.height(16.dp))
 
@@ -234,6 +253,78 @@ private fun OverBudgetBanner(profile: Profile?, consumed: Int, entries: List<Mea
             }
         }
         else -> { /* no banner */ }
+    }
+}
+
+@Composable
+private fun HealthBurnRow(
+    workoutBurn: Int,
+    healthBurn: Int,
+    steps: Int,
+    hcStatus: com.zad.app.health.HcStatus,
+    granted: Boolean,
+    onConnect: () -> Unit
+) {
+    val totalBurn = workoutBurn + healthBurn
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(18.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(Modifier.padding(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("سعرات محروقة اليوم",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f))
+                Text(
+                    "$totalBurn سعرة",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("التمارين: $workoutBurn",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("الساعة/الصحة: $healthBurn",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (steps > 0) {
+                    Text("خطوات: $steps",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            if (!granted) {
+                Spacer(Modifier.height(8.dp))
+                when (hcStatus) {
+                    com.zad.app.health.HcStatus.AVAILABLE -> {
+                        OutlinedButton(onClick = onConnect, modifier = Modifier.fillMaxWidth()) {
+                            Text("اربط بـ Health Connect لقراءة السعرات من ساعتك")
+                        }
+                    }
+                    com.zad.app.health.HcStatus.NEEDS_UPDATE -> {
+                        Text(
+                            "حدّث تطبيق Health Connect من متجر Play لقراءة بيانات الساعة",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                    }
+                    com.zad.app.health.HcStatus.NOT_INSTALLED -> {
+                        Text(
+                            "Health Connect غير مثبّت — ثبّته من متجر Play لقراءة سعرات الساعة. " +
+                            "أجهزة Huawei قد لا تكتب لـ Health Connect مباشرة.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

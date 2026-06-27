@@ -19,7 +19,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zad.app.R
 import com.zad.app.data.Routine
+import com.zad.app.data.WorkoutSession
 import com.zad.app.ui.ZadViewModel
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.temporal.WeekFields
+import java.util.Locale
 
 @Composable
 fun WorkoutScreen(
@@ -71,23 +77,55 @@ fun WorkoutScreen(
                     )
                 }
             } else {
-                items(sessions, key = { it.id }) { s ->
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(Modifier.padding(14.dp)) {
-                            Text(s.routineNameAr, style = MaterialTheme.typography.titleMedium)
-                            Text(
-                                s.dayKey,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                val grouped = groupSessionsByWeek(sessions)
+                grouped.forEach { (label, list) ->
+                    item(key = "wk-$label") {
+                        Text(
+                            label,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                        )
+                    }
+                    items(list, key = { it.id }) { s ->
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(Modifier.padding(14.dp)) {
+                                Text(s.routineNameAr, style = MaterialTheme.typography.titleMedium)
+                                Text(
+                                    s.dayKey,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+/** Bucket sessions into "هذا الأسبوع · الأسبوع الماضي · قبل N أسبوع". */
+private fun groupSessionsByWeek(sessions: List<WorkoutSession>): Map<String, List<WorkoutSession>> {
+    val today = LocalDate.now()
+    val wf = WeekFields.of(Locale.getDefault())
+    val thisWeek = today.get(wf.weekOfWeekBasedYear())
+    val thisYear = today.get(wf.weekBasedYear())
+
+    return sessions.groupBy { s ->
+        val date = Instant.ofEpochMilli(s.startedAtMs).atZone(ZoneId.systemDefault()).toLocalDate()
+        val week = date.get(wf.weekOfWeekBasedYear())
+        val year = date.get(wf.weekBasedYear())
+        val diff = (thisYear - year) * 52 + (thisWeek - week)
+        when {
+            diff <= 0 -> "هذا الأسبوع"
+            diff == 1 -> "الأسبوع الماضي"
+            diff in 2..4 -> "قبل $diff أسابيع"
+            else -> "قبل أكثر من شهر"
         }
     }
 }

@@ -31,6 +31,9 @@ interface WorkoutDao {
     @Query("SELECT * FROM routine_exercises WHERE routineId = :routineId ORDER BY orderIndex ASC")
     fun exercisesForRoutine(routineId: Long): Flow<List<RoutineExercise>>
 
+    @Query("SELECT * FROM routine_exercises WHERE routineId = :routineId ORDER BY orderIndex ASC")
+    suspend fun routineExercisesNow(routineId: Long): List<RoutineExercise>
+
     @Query("SELECT * FROM routines WHERE id = :id")
     suspend fun routineById(id: Long): Routine?
 
@@ -71,6 +74,19 @@ interface WorkoutDao {
         LIMIT 30
     """)
     fun topWeightPerSession(exerciseId: String): Flow<List<TopWeightPoint>>
+
+    /** Calories burned for a session — sum across all sets. */
+    @Query("SELECT IFNULL(SUM(caloriesEstimate),0) FROM exercise_sets WHERE sessionId = :sessionId")
+    fun caloriesForSession(sessionId: Long): Flow<Int>
+
+    /** Total calories burned across all sessions on this day. */
+    @Query("""
+        SELECT IFNULL(SUM(es.caloriesEstimate),0)
+        FROM workout_sessions s
+        INNER JOIN exercise_sets es ON es.sessionId = s.id
+        WHERE s.dayKey = :dayKey
+    """)
+    fun caloriesForDay(dayKey: String): Flow<Int>
 }
 
 data class TopWeightPoint(val startedAtMs: Long, val topWeight: Double)

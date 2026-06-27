@@ -55,6 +55,17 @@ class ZadViewModel(app: Application) : AndroidViewModel(app) {
     private val tracking = TrackingRepository(db.weightDao(), db.waterDao())
     private val classifier = FoodClassifier(app)
     private val profileStore = ProfileStore(app)
+    val healthBridge = com.zad.app.health.HealthConnectBridge(app)
+
+    private val _hc = MutableStateFlow(com.zad.app.health.HcReading())
+    val healthReading: StateFlow<com.zad.app.health.HcReading> = _hc.asStateFlow()
+
+    fun refreshHealthConnect() {
+        viewModelScope.launch {
+            _hc.value = runCatching { healthBridge.readToday() }
+                .getOrDefault(com.zad.app.health.HcReading())
+        }
+    }
 
     val onboarded: StateFlow<Boolean?> = profileStore.onboarded
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
@@ -83,9 +94,15 @@ class ZadViewModel(app: Application) : AndroidViewModel(app) {
     fun logSet(sessionId: Long, exerciseId: String, nameAr: String,
                setNumber: Int, weightKg: Double, reps: Int) {
         viewModelScope.launch {
-            workoutRepo.logSet(sessionId, exerciseId, nameAr, setNumber, weightKg, reps)
+            val bw = profile.value?.weightKg ?: latestWeight.value?.kg ?: 75.0
+            workoutRepo.logSet(sessionId, exerciseId, nameAr, setNumber, weightKg, reps, bw)
         }
     }
+
+    fun caloriesForSession(sessionId: Long) = workoutRepo.caloriesForSession(sessionId)
+
+    val caloriesBurnedToday: StateFlow<Int> = workoutRepo.caloriesBurnedToday()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     fun deleteSet(setId: Long) {
         viewModelScope.launch { workoutRepo.deleteSet(setId) }
@@ -97,6 +114,16 @@ class ZadViewModel(app: Application) : AndroidViewModel(app) {
 
     fun deleteCustomRoutine(id: Long) {
         viewModelScope.launch { workoutRepo.deleteCustomRoutine(id) }
+    }
+
+    suspend fun updateRoutineExercises(routineId: Long, exercises: List<Triple<String, Int, Int>>) =
+        workoutRepo.updateRoutineExercises(routineId, exercises)
+
+    fun appendExerciseToRoutine(routineId: Long, exerciseId: String,
+                                sets: Int = 3, reps: Int = 10) {
+        viewModelScope.launch {
+            workoutRepo.appendExerciseToRoutine(routineId, exerciseId, sets, reps)
+        }
     }
 
     // ── Body weight ──

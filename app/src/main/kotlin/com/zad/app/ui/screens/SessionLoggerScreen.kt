@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -38,6 +39,9 @@ fun SessionLoggerScreen(
         .collectAsStateWithLifecycle(initialValue = emptyList())
     val sets by vm.setsForSession(sessionId)
         .collectAsStateWithLifecycle(initialValue = emptyList())
+    val sessionKcal by vm.caloriesForSession(sessionId)
+        .collectAsStateWithLifecycle(initialValue = 0)
+    var pickerOpen by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -47,12 +51,31 @@ fun SessionLoggerScreen(
                     IconButton(onClick = onFinish) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
                     }
+                },
+                actions = {
+                    Surface(
+                        color = MaterialTheme.colorScheme.secondary,
+                        contentColor = MaterialTheme.colorScheme.onSecondary,
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Text(
+                            "$sessionKcal سعرة",
+                            style = MaterialTheme.typography.titleSmall,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
                 }
             )
         },
         bottomBar = {
             Surface(tonalElevation = 1.dp) {
-                Row(Modifier.padding(16.dp)) {
+                Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { pickerOpen = true }) {
+                        Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("تمرين")
+                    }
                     Spacer(Modifier.weight(1f))
                     Button(onClick = onFinish, modifier = Modifier.weight(2f)) {
                         Text(stringResource(R.string.workout_finish))
@@ -89,6 +112,16 @@ fun SessionLoggerScreen(
                 )
             }
         }
+    }
+
+    if (pickerOpen) {
+        ExercisePickerSheet(
+            onDismiss = { pickerOpen = false },
+            onPick = { ex ->
+                vm.appendExerciseToRoutine(routineId, ex.id)
+                pickerOpen = false
+            }
+        )
     }
 }
 
@@ -135,9 +168,10 @@ private fun ExerciseBlock(
                 Spacer(Modifier.height(12.dp))
                 // table header
                 Row {
-                    HeaderCell(stringResource(R.string.workout_set), 0.8f)
-                    HeaderCell(stringResource(R.string.workout_weight), 1.4f)
-                    HeaderCell(stringResource(R.string.workout_reps), 1.2f)
+                    HeaderCell(stringResource(R.string.workout_set), 0.7f)
+                    HeaderCell(stringResource(R.string.workout_weight), 1.2f)
+                    HeaderCell(stringResource(R.string.workout_reps), 1.0f)
+                    HeaderCell("سعرة", 0.9f)
                     Spacer(Modifier.width(40.dp))
                 }
                 Divider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
@@ -146,9 +180,10 @@ private fun ExerciseBlock(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(vertical = 4.dp)
                     ) {
-                        BodyCell("${s.setNumber}", 0.8f)
-                        BodyCell("${s.weightKg}", 1.4f)
-                        BodyCell("${s.reps}", 1.2f)
+                        BodyCell("${s.setNumber}", 0.7f)
+                        BodyCell("${s.weightKg}", 1.2f)
+                        BodyCell("${s.reps}", 1.0f)
+                        BodyCell("${s.caloriesEstimate}", 0.9f)
                         IconButton(onClick = { onDeleteSet(s.id) }, modifier = Modifier.size(36.dp)) {
                             Icon(
                                 Icons.Default.Delete,

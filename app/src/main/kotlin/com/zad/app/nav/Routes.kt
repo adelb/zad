@@ -13,6 +13,8 @@ object Routes {
     const val WORKOUT = "workout"
     const val ROUTINE_NEW = "routine/new"
     const val ROUTINE_DETAIL = "routine/{id}"
+    const val ROUTINE_EDIT = "routine/{id}/edit"
+    fun routineEdit(id: Long): String = "routine/$id/edit"
     const val SESSION = "session/{sessionId}/routine/{routineId}"
     const val SCALE = "scale/{path}"
 

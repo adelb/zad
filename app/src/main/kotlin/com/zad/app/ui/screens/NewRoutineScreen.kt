@@ -20,25 +20,48 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.zad.app.R
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zad.app.data.Exercise
 import com.zad.app.data.ExerciseCatalog
 import com.zad.app.data.MuscleGroup
 import com.zad.app.ui.ZadViewModel
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NewRoutineScreen(vm: ZadViewModel, onDone: () -> Unit, onBack: () -> Unit) {
-    var name by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
+fun NewRoutineScreen(
+    vm: ZadViewModel,
+    onDone: () -> Unit,
+    onBack: () -> Unit,
+    editRoutineId: Long? = null
+) {
+    val isEdit = editRoutineId != null
+    val routines by vm.routines.collectAsStateWithLifecycle()
+    val existing = remember(routines, editRoutineId) {
+        editRoutineId?.let { id -> routines.firstOrNull { it.id == id } }
+    }
+
+    var name by remember(existing) { mutableStateOf(existing?.nameAr ?: "") }
+    var description by remember(existing) { mutableStateOf(existing?.descriptionAr ?: "") }
     val picked = remember { mutableStateListOf<Triple<String, Int, Int>>() }
+
+    // When editing, preload exercises once
+    LaunchedEffect(editRoutineId) {
+        if (editRoutineId != null) {
+            val exs = vm.exercisesForRoutine(editRoutineId).firstOrNull() ?: emptyList()
+            picked.clear()
+            picked.addAll(exs.map { Triple(it.exerciseId, it.targetSets, it.targetReps) })
+        }
+    }
+
     var pickerOpen by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.workout_new)) },
+                title = { Text(if (isEdit) stringResource(R.string.profile_edit) else stringResource(R.string.workout_new)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
@@ -53,11 +76,15 @@ fun NewRoutineScreen(vm: ZadViewModel, onDone: () -> Unit, onBack: () -> Unit) {
                     Button(
                         onClick = {
                             scope.launch {
-                                vm.createCustomRoutine(name.ifBlank { "روتيني" }, description, picked.toList())
+                                if (isEdit && editRoutineId != null) {
+                                    vm.updateRoutineExercises(editRoutineId, picked.toList())
+                                } else {
+                                    vm.createCustomRoutine(name.ifBlank { "روتيني" }, description, picked.toList())
+                                }
                                 onDone()
                             }
                         },
-                        enabled = picked.isNotEmpty() && name.isNotBlank(),
+                        enabled = picked.isNotEmpty() && (isEdit || name.isNotBlank()),
                         modifier = Modifier.weight(2f)
                     ) { Text(stringResource(R.string.workout_save_routine)) }
                 }

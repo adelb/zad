@@ -40,5 +40,7 @@ data class ExerciseSet(
     val setNumber: Int,
     val weightKg: Double,
     val reps: Int,
-    val recordedAtMs: Long
+    val recordedAtMs: Long,
+    /** Estimated calories burned for this set (MET-based, defaults to 0 on legacy rows). */
+    val caloriesEstimate: Int = 0
 )

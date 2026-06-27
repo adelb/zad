@@ -136,6 +136,18 @@ fun ZadNavRoot() {
                 )
             }
             composable(
+                Routes.ROUTINE_EDIT,
+                arguments = listOf(navArgument("id") { type = NavType.LongType })
+            ) { entry ->
+                val id = entry.arguments?.getLong("id") ?: return@composable
+                NewRoutineScreen(
+                    vm = vm,
+                    editRoutineId = id,
+                    onDone = { nav.popBackStack() },
+                    onBack = { nav.popBackStack() }
+                )
+            }
+            composable(
                 Routes.ROUTINE_DETAIL,
                 arguments = listOf(navArgument("id") { type = NavType.LongType })
             ) { entry ->
@@ -148,7 +160,8 @@ fun ZadNavRoot() {
                         nav.navigate(Routes.session(sid, id)) {
                             popUpTo(Routes.WORKOUT)
                         }
-                    }
+                    },
+                    onEdit = { nav.navigate(Routes.routineEdit(id)) }
                 )
             }
             composable(

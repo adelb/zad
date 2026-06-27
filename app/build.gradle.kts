@@ -94,6 +94,12 @@ dependencies {
     // EXIF
     implementation("androidx.exifinterface:exifinterface:1.3.7")
 
+    // Health Connect — read active calories burned from any health app on the device
+    implementation("androidx.health.connect:connect-client:1.1.0-alpha07")
+
+    // ListenableFuture (used by CameraX) — pin Guava to keep both happy
+    implementation("com.google.guava:guava:33.2.1-android")
+
     // ML Kit on-device image labeling — bundled, works offline after install
     implementation("com.google.mlkit:image-labeling:17.0.9")
     implementation("com.google.android.gms:play-services-tasks:18.2.0")
