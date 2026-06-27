@@ -2,38 +2,29 @@ package com.zad.app.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.googlefonts.Font
-import androidx.compose.ui.text.googlefonts.GoogleFont
 import androidx.compose.ui.unit.sp
 import com.zad.app.R
 
-private val provider = GoogleFont.Provider(
-    providerAuthority = "com.google.android.gms.fonts",
-    providerPackage = "com.google.android.gms",
-    certificates = R.array.com_google_android_gms_fonts_certs
-)
-
-private val ArefRuqaa = GoogleFont("Aref Ruqaa")
-private val Cairo = GoogleFont("Cairo")
-
+/**
+ * Fonts shipped inside the APK — no Google Fonts provider, no network on first launch.
+ * - Aref Ruqaa Regular + Bold for display / headlines / titles / labels
+ * - Cairo (variable) for body text
+ */
 val Ruqaa = FontFamily(
-    Font(googleFont = ArefRuqaa, fontProvider = provider, weight = FontWeight.Normal),
-    Font(googleFont = ArefRuqaa, fontProvider = provider, weight = FontWeight.Bold)
+    Font(R.font.aref_ruqaa_regular, FontWeight.Normal),
+    Font(R.font.aref_ruqaa_bold,    FontWeight.Bold)
 )
 
 val Body = FontFamily(
-    Font(googleFont = Cairo, fontProvider = provider, weight = FontWeight.Normal),
-    Font(googleFont = Cairo, fontProvider = provider, weight = FontWeight.Medium),
-    Font(googleFont = Cairo, fontProvider = provider, weight = FontWeight.SemiBold),
-    Font(googleFont = Cairo, fontProvider = provider, weight = FontWeight.Bold)
+    Font(R.font.cairo_regular, FontWeight.Normal),
+    Font(R.font.cairo_regular, FontWeight.Medium),
+    Font(R.font.cairo_regular, FontWeight.SemiBold),
+    Font(R.font.cairo_regular, FontWeight.Bold)
 )
 
-/**
- * Ruqaa dominates: display, headlines, titles, and button labels.
- * Cairo carries body text, where Ruqaa would slow reading.
- */
 val ZadTypography = Typography(
     displayLarge  = TextStyle(fontFamily = Ruqaa, fontWeight = FontWeight.Bold, fontSize = 48.sp, lineHeight = 60.sp),
     displayMedium = TextStyle(fontFamily = Ruqaa, fontWeight = FontWeight.Bold, fontSize = 38.sp, lineHeight = 48.sp),

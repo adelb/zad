@@ -9,6 +9,8 @@ import com.zad.app.data.MealEntry
 import com.zad.app.data.MealRepository
 import com.zad.app.data.MealTotal
 import com.zad.app.data.MealType
+import com.zad.app.data.Profile
+import com.zad.app.data.ProfileStore
 import com.zad.app.data.ZadDatabase
 import com.zad.app.ml.Dish
 import com.zad.app.ml.DishCatalog
@@ -42,6 +44,17 @@ class ZadViewModel(app: Application) : AndroidViewModel(app) {
 
     private val repo: MealRepository = MealRepository(ZadDatabase.get(app).mealDao())
     private val classifier = FoodClassifier(app)
+    private val profileStore = ProfileStore(app)
+
+    val onboarded: StateFlow<Boolean?> = profileStore.onboarded
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    val profile: StateFlow<Profile?> = profileStore.profile
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    fun saveProfile(p: Profile) {
+        viewModelScope.launch { profileStore.save(p) }
+    }
 
     private val _scan = MutableStateFlow(ScanState())
     val scan: StateFlow<ScanState> = _scan.asStateFlow()

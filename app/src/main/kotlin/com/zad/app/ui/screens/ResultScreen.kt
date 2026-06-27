@@ -84,6 +84,14 @@ fun ResultScreen(
                     Spacer(Modifier.height(4.dp))
                     Text(state.dish.nameAr, style = MaterialTheme.typography.displaySmall)
                     val pred = state.prediction
+                    if (pred?.rawLabel != null) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "تم التعرف على: ${pred.rawLabel} · ${(pred.confidence * 100).toInt()}%",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     if (pred != null && pred.confidence < FoodClassifier.LOW_CONFIDENCE_THRESHOLD) {
                         Spacer(Modifier.height(6.dp))
                         Text(

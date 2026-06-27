@@ -68,4 +68,53 @@
     <!-- Dish picker -->
     <string name="picker_title">اختر الطبق</string>
     <string name="picker_search">ابحث…</string>
+
+    <!-- Onboarding -->
+    <string name="onb_title">مرحبًا بك في زاد</string>
+    <string name="onb_sub">أخبرنا عنك لنحسب احتياجك اليومي من السعرات</string>
+    <string name="onb_age">العمر</string>
+    <string name="onb_height">الطول (سم)</string>
+    <string name="onb_weight">الوزن (كغ)</string>
+    <string name="onb_sex">الجنس</string>
+    <string name="onb_activity">مستوى النشاط</string>
+    <string name="onb_goal">الهدف</string>
+    <string name="onb_continue">حساب احتياجي</string>
+    <string name="onb_finish">ابدأ</string>
+
+    <string name="sex_male">ذكر</string>
+    <string name="sex_female">أنثى</string>
+
+    <string name="activity_sedentary">قليل الحركة</string>
+    <string name="activity_sedentary_desc">عمل مكتبي، لا تمارين</string>
+    <string name="activity_light">نشاط خفيف</string>
+    <string name="activity_light_desc">رياضة خفيفة ١-٣ أيام/أسبوع</string>
+    <string name="activity_moderate">نشاط متوسط</string>
+    <string name="activity_moderate_desc">رياضة منتظمة ٣-٥ أيام/أسبوع</string>
+    <string name="activity_heavy">نشاط مرتفع</string>
+    <string name="activity_heavy_desc">رياضة شاقة ٦-٧ أيام/أسبوع</string>
+    <string name="activity_very_heavy">نشاط عالٍ جدًا</string>
+    <string name="activity_very_heavy_desc">عمل بدني + تمارين يومية</string>
+
+    <string name="goal_lose">إنقاص الوزن</string>
+    <string name="goal_maintain">المحافظة</string>
+    <string name="goal_gain">زيادة الوزن</string>
+
+    <string name="bmi_underweight">نحيف</string>
+    <string name="bmi_normal">طبيعي</string>
+    <string name="bmi_overweight">زيادة وزن</string>
+    <string name="bmi_obese">سمنة</string>
+
+    <!-- Today budget -->
+    <string name="budget_target">احتياجك اليومي</string>
+    <string name="budget_eaten">المأكول</string>
+    <string name="budget_left">المتبقّي</string>
+    <string name="budget_over">تجاوزت احتياجك اليوم</string>
+    <string name="budget_over_hint">جرّب تقليل وجبة، أو زِد نشاطك غدًا</string>
+    <string name="budget_near">اقتربت من حدّك اليومي</string>
+    <string name="bmi_label">مؤشر كتلة الجسم</string>
+
+    <!-- Profile/Settings -->
+    <string name="profile_title">ملفّك</string>
+    <string name="profile_edit">تعديل</string>
+    <string name="profile_save">حفظ</string>
 </resources>

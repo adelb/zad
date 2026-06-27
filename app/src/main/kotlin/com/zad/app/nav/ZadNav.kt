@@ -21,8 +21,11 @@ import com.zad.app.R
 import com.zad.app.ml.PortionEstimator
 import com.zad.app.ml.pixelAreaToCm2
 import com.zad.app.ui.ZadViewModel
+import androidx.compose.runtime.collectAsState
 import com.zad.app.ui.screens.CameraScreen
 import com.zad.app.ui.screens.HistoryScreen
+import com.zad.app.ui.screens.OnboardingScreen
+import com.zad.app.ui.screens.ProfileScreen
 import com.zad.app.ui.screens.ResultScreen
 import com.zad.app.ui.screens.ScaleScreen
 import com.zad.app.ui.screens.SplashScreen
@@ -39,8 +42,7 @@ fun ZadNavRoot() {
 
     Scaffold(
         bottomBar = {
-            val showTabs = currentRoute in listOf(Routes.TODAY, Routes.HISTORY, Routes.CAPTURE) &&
-                    currentRoute != Routes.SPLASH
+            val showTabs = currentRoute in listOf(Routes.TODAY, Routes.HISTORY, Routes.CAPTURE)
             if (showTabs) {
                 NavigationBar(containerColor = MaterialTheme.colorScheme.background) {
                     NavigationBarItem(
@@ -71,14 +73,31 @@ fun ZadNavRoot() {
             modifier = Modifier.padding(padding)
         ) {
             composable(Routes.SPLASH) {
+                val onboarded by vm.onboarded.collectAsState()
                 SplashScreen(onDone = {
-                    nav.navigate(Routes.TODAY) {
+                    val next = if (onboarded == true) Routes.TODAY else Routes.ONBOARDING
+                    nav.navigate(next) {
                         popUpTo(Routes.SPLASH) { inclusive = true }
                     }
                 })
             }
+            composable(Routes.ONBOARDING) {
+                OnboardingScreen(onFinish = { p ->
+                    vm.saveProfile(p)
+                    nav.navigate(Routes.TODAY) {
+                        popUpTo(Routes.ONBOARDING) { inclusive = true }
+                    }
+                })
+            }
             composable(Routes.TODAY) {
-                TodayScreen(vm = vm, onCapture = { nav.navigate(Routes.CAPTURE) })
+                TodayScreen(
+                    vm = vm,
+                    onCapture = { nav.navigate(Routes.CAPTURE) },
+                    onOpenProfile = { nav.navigate(Routes.PROFILE) }
+                )
+            }
+            composable(Routes.PROFILE) {
+                ProfileScreen(vm = vm, onBack = { nav.popBackStack() })
             }
             composable(Routes.HISTORY) { HistoryScreen(vm = vm) }
             composable(Routes.CAPTURE) {

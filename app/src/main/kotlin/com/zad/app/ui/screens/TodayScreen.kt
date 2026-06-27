@@ -7,6 +7,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
@@ -21,13 +23,19 @@ import coil.compose.AsyncImage
 import com.zad.app.R
 import com.zad.app.data.MealEntry
 import com.zad.app.data.MealType
+import com.zad.app.data.Profile
 import com.zad.app.ui.ZadViewModel
 
 @Composable
-fun TodayScreen(vm: ZadViewModel, onCapture: () -> Unit) {
+fun TodayScreen(
+    vm: ZadViewModel,
+    onCapture: () -> Unit,
+    onOpenProfile: () -> Unit = {}
+) {
     val total by vm.todayTotal.collectAsStateWithLifecycle()
     val entries by vm.todayEntries.collectAsStateWithLifecycle()
     val perMeal by vm.perMealToday.collectAsStateWithLifecycle()
+    val profile by vm.profile.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
@@ -42,6 +50,10 @@ fun TodayScreen(vm: ZadViewModel, onCapture: () -> Unit) {
             )
             Spacer(Modifier.width(12.dp))
             Text(stringResource(R.string.app_name), style = MaterialTheme.typography.displaySmall)
+            Spacer(Modifier.weight(1f))
+            IconButton(onClick = onOpenProfile) {
+                Icon(Icons.Default.Person, contentDescription = stringResource(R.string.profile_title))
+            }
         }
         Spacer(Modifier.height(4.dp))
         Text(stringResource(R.string.tagline),
@@ -49,7 +61,11 @@ fun TodayScreen(vm: ZadViewModel, onCapture: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(16.dp))
 
-        TotalCard(total = total)
+        BudgetCard(profile = profile, consumed = total)
+
+        Spacer(Modifier.height(12.dp))
+
+        OverBudgetBanner(profile = profile, consumed = total, entries = entries)
 
         Spacer(Modifier.height(16.dp))
 
@@ -84,22 +100,125 @@ fun TodayScreen(vm: ZadViewModel, onCapture: () -> Unit) {
 }
 
 @Composable
-private fun TotalCard(total: Int) {
+private fun BudgetCard(profile: Profile?, consumed: Int) {
+    val target = profile?.dailyTargetKcal
+    val remaining = target?.let { (it - consumed).coerceAtLeast(0) }
+    val over = if (target != null) (consumed - target).coerceAtLeast(0) else 0
+    val pct = if (target != null && target > 0) (consumed.toFloat() / target).coerceIn(0f, 1.2f) else 0f
+
     Surface(
         color = MaterialTheme.colorScheme.primary,
         contentColor = MaterialTheme.colorScheme.onPrimary,
         shape = RoundedCornerShape(24.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(Modifier.padding(24.dp)) {
-            Text(stringResource(R.string.today_total), style = MaterialTheme.typography.labelLarge)
-            Spacer(Modifier.height(6.dp))
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text("$total", style = MaterialTheme.typography.displayLarge)
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.result_kcal), style = MaterialTheme.typography.titleLarge)
+        Column(Modifier.padding(22.dp)) {
+            if (target == null) {
+                Text(stringResource(R.string.today_total), style = MaterialTheme.typography.labelLarge)
+                Spacer(Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text("$consumed", style = MaterialTheme.typography.displayLarge)
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.result_kcal), style = MaterialTheme.typography.titleLarge)
+                }
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.budget_left),
+                            style = MaterialTheme.typography.labelLarge)
+                        Spacer(Modifier.height(4.dp))
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text("${remaining ?: 0}", style = MaterialTheme.typography.displayLarge)
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.result_kcal),
+                                style = MaterialTheme.typography.titleLarge)
+                        }
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+                LinearProgressIndicator(
+                    progress = { pct },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = MaterialTheme.colorScheme.tertiary,
+                    trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f),
+                )
+                Spacer(Modifier.height(10.dp))
+                Row {
+                    Text(
+                        "${stringResource(R.string.budget_eaten)}: $consumed",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Text(
+                        "${stringResource(R.string.budget_target)}: $target",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                    )
+                }
+                if (over > 0) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "تجاوزت بـ $over ${stringResource(R.string.result_kcal)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun OverBudgetBanner(profile: Profile?, consumed: Int, entries: List<MealEntry>) {
+    val target = profile?.dailyTargetKcal ?: return
+    val ratio = consumed.toFloat() / target
+
+    when {
+        ratio > 1f -> {
+            // suggest reducing the largest entry of the day
+            val biggest = entries.maxByOrNull { it.calories }
+            val suggestion = biggest?.let {
+                "جرّب تقليل ${it.dishNameAr} (${it.calories} سعرة)"
+            } ?: stringResource(R.string.budget_over_hint)
+
+            Surface(
+                color = MaterialTheme.colorScheme.errorContainer,
+                contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.WarningAmber, null)
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.budget_over),
+                            style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(2.dp))
+                        Text(suggestion, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+        }
+        ratio >= 0.9f -> {
+            Surface(
+                color = MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.WarningAmber, null)
+                    Spacer(Modifier.width(10.dp))
+                    Text(stringResource(R.string.budget_near),
+                        style = MaterialTheme.typography.titleMedium)
+                }
+            }
+        }
+        else -> { /* no banner */ }
     }
 }
 
