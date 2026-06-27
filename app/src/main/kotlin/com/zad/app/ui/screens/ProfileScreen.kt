@@ -24,26 +24,27 @@ import com.zad.app.data.Goal
 import com.zad.app.data.Profile
 import com.zad.app.data.Sex
 import com.zad.app.ui.ZadViewModel
+import com.zad.app.ui.components.DobField
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(vm: ZadViewModel, onBack: () -> Unit) {
     val p by vm.profile.collectAsStateWithLifecycle()
 
-    var age      by remember(p) { mutableStateOf(p?.ageYears?.toString() ?: "30") }
+    var dob      by remember(p) { mutableStateOf(p?.birthDate ?: LocalDate.now().minusYears(30)) }
     var height   by remember(p) { mutableStateOf(p?.heightCm?.toString() ?: "170") }
     var weight   by remember(p) { mutableStateOf(p?.weightKg?.toString() ?: "75") }
     var sex      by remember(p) { mutableStateOf(p?.sex ?: Sex.MALE) }
     var activity by remember(p) { mutableStateOf(p?.activity ?: ActivityLevel.MODERATE) }
     var goal     by remember(p) { mutableStateOf(p?.goal ?: Goal.MAINTAIN) }
 
-    val ageNum = age.toIntOrNull()
     val hNum = height.toIntOrNull()
     val wNum = weight.toDoubleOrNull()
-    val valid = (ageNum != null && ageNum in 10..100) &&
-                (hNum != null && hNum in 120..230) &&
-                (wNum != null && wNum in 30.0..250.0)
-    val preview: Profile? = if (valid) Profile(ageNum!!, sex, hNum!!, wNum!!, activity, goal) else null
+    val valid = (hNum != null && hNum in 120..230) &&
+                (wNum != null && wNum in 30.0..250.0) &&
+                dob.isBefore(LocalDate.now().minusYears(10))
+    val preview: Profile? = if (valid) Profile(dob, sex, hNum!!, wNum!!, activity, goal) else null
 
     Scaffold(
         topBar = {
@@ -64,11 +65,9 @@ fun ProfileScreen(vm: ZadViewModel, onBack: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 22.dp, vertical = 16.dp)
         ) {
+            DobField(value = dob, onChange = { dob = it })
+            Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(value = age, onValueChange = { age = it.filter(Char::isDigit).take(3) },
-                    label = { Text(stringResource(R.string.onb_age)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true, modifier = Modifier.weight(1f))
                 OutlinedTextField(value = height, onValueChange = { height = it.filter(Char::isDigit).take(3) },
                     label = { Text(stringResource(R.string.onb_height)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),

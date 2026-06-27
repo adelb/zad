@@ -5,12 +5,19 @@ import android.graphics.BitmapFactory
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.zad.app.data.ExerciseSet
 import com.zad.app.data.MealEntry
 import com.zad.app.data.MealRepository
 import com.zad.app.data.MealTotal
 import com.zad.app.data.MealType
 import com.zad.app.data.Profile
 import com.zad.app.data.ProfileStore
+import com.zad.app.data.Routine
+import com.zad.app.data.RoutineExercise
+import com.zad.app.data.TrackingRepository
+import com.zad.app.data.WeightEntry
+import com.zad.app.data.WorkoutRepository
+import com.zad.app.data.WorkoutSession
 import com.zad.app.data.ZadDatabase
 import com.zad.app.ml.Dish
 import com.zad.app.ml.DishCatalog
@@ -42,7 +49,10 @@ data class ScanState(
 
 class ZadViewModel(app: Application) : AndroidViewModel(app) {
 
-    private val repo: MealRepository = MealRepository(ZadDatabase.get(app).mealDao())
+    private val db = ZadDatabase.get(app)
+    private val repo: MealRepository = MealRepository(db.mealDao())
+    private val workoutRepo = WorkoutRepository(db.workoutDao())
+    private val tracking = TrackingRepository(db.weightDao(), db.waterDao())
     private val classifier = FoodClassifier(app)
     private val profileStore = ProfileStore(app)
 
@@ -54,6 +64,62 @@ class ZadViewModel(app: Application) : AndroidViewModel(app) {
 
     fun saveProfile(p: Profile) {
         viewModelScope.launch { profileStore.save(p) }
+    }
+
+    // ── Workouts ──
+    val routines: StateFlow<List<Routine>> = workoutRepo.routines()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val recentSessions: StateFlow<List<WorkoutSession>> = workoutRepo.recentSessions()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun exercisesForRoutine(routineId: Long) = workoutRepo.exercisesForRoutine(routineId)
+    fun setsForSession(sessionId: Long) = workoutRepo.setsForSession(sessionId)
+    fun topWeightPerSession(exerciseId: String) = workoutRepo.topWeightPerSession(exerciseId)
+
+    suspend fun startSession(routineId: Long?, name: String): Long =
+        workoutRepo.startSession(routineId, name)
+
+    fun logSet(sessionId: Long, exerciseId: String, nameAr: String,
+               setNumber: Int, weightKg: Double, reps: Int) {
+        viewModelScope.launch {
+            workoutRepo.logSet(sessionId, exerciseId, nameAr, setNumber, weightKg, reps)
+        }
+    }
+
+    fun deleteSet(setId: Long) {
+        viewModelScope.launch { workoutRepo.deleteSet(setId) }
+    }
+
+    suspend fun createCustomRoutine(name: String, description: String,
+                                    exercises: List<Triple<String, Int, Int>>): Long =
+        workoutRepo.createCustomRoutine(name, description, exercises)
+
+    fun deleteCustomRoutine(id: Long) {
+        viewModelScope.launch { workoutRepo.deleteCustomRoutine(id) }
+    }
+
+    // ── Body weight ──
+    val recentWeights: StateFlow<List<WeightEntry>> = tracking.recentWeights()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val latestWeight: StateFlow<WeightEntry?> = tracking.latestWeight()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    fun logBodyWeight(kg: Double) {
+        viewModelScope.launch { tracking.logWeight(kg) }
+    }
+
+    // ── Water ──
+    val todayWaterMl: StateFlow<Int> = tracking.todayWaterMl()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    fun addWater(ml: Int) {
+        viewModelScope.launch { tracking.addWater(ml) }
+    }
+
+    fun resetTodayWater() {
+        viewModelScope.launch { tracking.clearTodayWater() }
     }
 
     private val _scan = MutableStateFlow(ScanState())

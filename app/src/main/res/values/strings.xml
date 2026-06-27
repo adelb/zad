@@ -117,4 +117,56 @@
     <string name="profile_title">ملفّك</string>
     <string name="profile_edit">تعديل</string>
     <string name="profile_save">حفظ</string>
+
+    <!-- DOB picker -->
+    <string name="onb_dob">تاريخ الميلاد</string>
+    <string name="dob_select">اختر تاريخ الميلاد</string>
+    <string name="confirm_ok">حسنًا</string>
+
+    <!-- Tabs (extended) -->
+    <string name="tab_workout">تمرين</string>
+    <string name="tab_stats">إحصاءات</string>
+
+    <!-- Workouts -->
+    <string name="workout_title">تمارينك</string>
+    <string name="workout_routines">الروتينات</string>
+    <string name="workout_preset">روتينات جاهزة</string>
+    <string name="workout_custom">روتيناتك</string>
+    <string name="workout_new">روتين جديد</string>
+    <string name="workout_start">ابدأ التمرين</string>
+    <string name="workout_finish">إنهاء</string>
+    <string name="workout_save_routine">حفظ الروتين</string>
+    <string name="workout_routine_name">اسم الروتين</string>
+    <string name="workout_pick_exercise">اختر تمارينك</string>
+    <string name="workout_exercise_count">%1$d تمرين</string>
+    <string name="workout_no_sessions">لم تسجّل تمرينًا بعد</string>
+    <string name="workout_sets">مجموعات</string>
+    <string name="workout_set">مجموعة</string>
+    <string name="workout_weight">وزن (كغ)</string>
+    <string name="workout_reps">عدّات</string>
+    <string name="workout_add_set">+ أضف مجموعة</string>
+    <string name="workout_recent">آخر التمارين</string>
+
+    <!-- Body weight -->
+    <string name="weight_title">وزنك</string>
+    <string name="weight_log">سجّل وزنك</string>
+    <string name="weight_current">وزنك الحالي</string>
+    <string name="weight_chart">منحنى الوزن</string>
+    <string name="weight_weekly_prompt">حان وقت قياس وزنك الأسبوعي</string>
+    <string name="weight_save">حفظ</string>
+    <string name="weight_empty">لا توجد قياسات بعد</string>
+
+    <!-- Water -->
+    <string name="water_title">الماء</string>
+    <string name="water_today">ماء اليوم</string>
+    <string name="water_target">هدفك</string>
+    <string name="water_add_glass">+ كأس ٢٥٠ مل</string>
+    <string name="water_done">أكملت هدف اليوم!</string>
+    <string name="water_remaining">المتبقّي</string>
+
+    <!-- Stats / charts -->
+    <string name="stats_title">إحصاءاتك</string>
+    <string name="stats_body_weight">وزن الجسم</string>
+    <string name="stats_lift_progress">منحنى الأوزان المرفوعة</string>
+    <string name="stats_no_data">لا توجد بيانات كافية بعد</string>
 </resources>

@@ -1,11 +1,15 @@
 package com.zad.app.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocalDrink
+import androidx.compose.material.icons.filled.MonitorWeight
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.WarningAmber
@@ -30,16 +34,21 @@ import com.zad.app.ui.ZadViewModel
 fun TodayScreen(
     vm: ZadViewModel,
     onCapture: () -> Unit,
-    onOpenProfile: () -> Unit = {}
+    onOpenProfile: () -> Unit = {},
+    onOpenWater: () -> Unit = {},
+    onOpenWeight: () -> Unit = {}
 ) {
     val total by vm.todayTotal.collectAsStateWithLifecycle()
     val entries by vm.todayEntries.collectAsStateWithLifecycle()
     val perMeal by vm.perMealToday.collectAsStateWithLifecycle()
     val profile by vm.profile.collectAsStateWithLifecycle()
+    val waterMl by vm.todayWaterMl.collectAsStateWithLifecycle()
+    val latestWeight by vm.latestWeight.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .statusBarsPadding()
             .padding(20.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -66,6 +75,12 @@ fun TodayScreen(
         Spacer(Modifier.height(12.dp))
 
         OverBudgetBanner(profile = profile, consumed = total, entries = entries)
+
+        WeighInPrompt(latestMs = latestWeight?.recordedAtMs, onClick = onOpenWeight)
+
+        Spacer(Modifier.height(16.dp))
+
+        WaterRow(currentMl = waterMl, targetMl = profile?.dailyWaterMl ?: 2500, onOpen = onOpenWater)
 
         Spacer(Modifier.height(16.dp))
 
@@ -219,6 +234,65 @@ private fun OverBudgetBanner(profile: Profile?, consumed: Int, entries: List<Mea
             }
         }
         else -> { /* no banner */ }
+    }
+}
+
+@Composable
+private fun WaterRow(currentMl: Int, targetMl: Int, onOpen: () -> Unit) {
+    val ratio = (currentMl.toFloat() / targetMl).coerceIn(0f, 1f)
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(18.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onOpen)
+    ) {
+        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.LocalDrink, null, tint = MaterialTheme.colorScheme.secondary)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.water_today), style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(4.dp))
+                LinearProgressIndicator(
+                    progress = { ratio },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp)),
+                    color = MaterialTheme.colorScheme.secondary,
+                    trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Text("$currentMl / $targetMl",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun WeighInPrompt(latestMs: Long?, onClick: () -> Unit) {
+    val staleAfterMs = 7L * 24 * 60 * 60 * 1000
+    val isStale = latestMs == null || (System.currentTimeMillis() - latestMs) >= staleAfterMs
+    if (!isStale) return
+    Spacer(Modifier.height(12.dp))
+    Surface(
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+    ) {
+        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.MonitorWeight, null)
+            Spacer(Modifier.width(10.dp))
+            Text(stringResource(R.string.weight_weekly_prompt),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f))
+            Text("→", style = MaterialTheme.typography.titleLarge)
+        }
     }
 }
 

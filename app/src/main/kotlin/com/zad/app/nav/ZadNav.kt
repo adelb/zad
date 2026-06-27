@@ -1,7 +1,9 @@
 package com.zad.app.nav
 
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Today
@@ -24,12 +26,18 @@ import com.zad.app.ui.ZadViewModel
 import androidx.compose.runtime.collectAsState
 import com.zad.app.ui.screens.CameraScreen
 import com.zad.app.ui.screens.HistoryScreen
+import com.zad.app.ui.screens.NewRoutineScreen
 import com.zad.app.ui.screens.OnboardingScreen
 import com.zad.app.ui.screens.ProfileScreen
 import com.zad.app.ui.screens.ResultScreen
+import com.zad.app.ui.screens.RoutineDetailScreen
 import com.zad.app.ui.screens.ScaleScreen
+import com.zad.app.ui.screens.SessionLoggerScreen
 import com.zad.app.ui.screens.SplashScreen
 import com.zad.app.ui.screens.TodayScreen
+import com.zad.app.ui.screens.WaterScreen
+import com.zad.app.ui.screens.WeightScreen
+import com.zad.app.ui.screens.WorkoutScreen
 import com.zad.app.vision.computeScaleMmPerPx
 import java.net.URLDecoder
 
@@ -41,8 +49,12 @@ fun ZadNavRoot() {
     val vm: ZadViewModel = viewModel()
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            val showTabs = currentRoute in listOf(Routes.TODAY, Routes.HISTORY, Routes.CAPTURE)
+            val showTabs = currentRoute in listOf(
+                Routes.TODAY, Routes.HISTORY, Routes.CAPTURE, Routes.WORKOUT
+            )
             if (showTabs) {
                 NavigationBar(containerColor = MaterialTheme.colorScheme.background) {
                     NavigationBarItem(
@@ -50,6 +62,12 @@ fun ZadNavRoot() {
                         onClick = { navigateTab(nav, Routes.TODAY) },
                         icon = { Icon(Icons.Default.Today, null) },
                         label = { Text(stringResource(R.string.tab_today)) }
+                    )
+                    NavigationBarItem(
+                        selected = currentRoute == Routes.WORKOUT,
+                        onClick = { navigateTab(nav, Routes.WORKOUT) },
+                        icon = { Icon(Icons.Default.FitnessCenter, null) },
+                        label = { Text(stringResource(R.string.tab_workout)) }
                     )
                     NavigationBarItem(
                         selected = currentRoute == Routes.CAPTURE,
@@ -93,11 +111,61 @@ fun ZadNavRoot() {
                 TodayScreen(
                     vm = vm,
                     onCapture = { nav.navigate(Routes.CAPTURE) },
-                    onOpenProfile = { nav.navigate(Routes.PROFILE) }
+                    onOpenProfile = { nav.navigate(Routes.PROFILE) },
+                    onOpenWater = { nav.navigate(Routes.WATER) },
+                    onOpenWeight = { nav.navigate(Routes.WEIGHT) }
                 )
             }
             composable(Routes.PROFILE) {
                 ProfileScreen(vm = vm, onBack = { nav.popBackStack() })
+            }
+            composable(Routes.WEIGHT) { WeightScreen(vm = vm, onBack = { nav.popBackStack() }) }
+            composable(Routes.WATER) { WaterScreen(vm = vm, onBack = { nav.popBackStack() }) }
+            composable(Routes.WORKOUT) {
+                WorkoutScreen(
+                    vm = vm,
+                    onOpenRoutine = { id -> nav.navigate(Routes.routine(id)) },
+                    onCreateRoutine = { nav.navigate(Routes.ROUTINE_NEW) }
+                )
+            }
+            composable(Routes.ROUTINE_NEW) {
+                NewRoutineScreen(
+                    vm = vm,
+                    onDone = { nav.popBackStack() },
+                    onBack = { nav.popBackStack() }
+                )
+            }
+            composable(
+                Routes.ROUTINE_DETAIL,
+                arguments = listOf(navArgument("id") { type = NavType.LongType })
+            ) { entry ->
+                val id = entry.arguments?.getLong("id") ?: return@composable
+                RoutineDetailScreen(
+                    vm = vm,
+                    routineId = id,
+                    onBack = { nav.popBackStack() },
+                    onStartSession = { sid ->
+                        nav.navigate(Routes.session(sid, id)) {
+                            popUpTo(Routes.WORKOUT)
+                        }
+                    }
+                )
+            }
+            composable(
+                Routes.SESSION,
+                arguments = listOf(
+                    navArgument("sessionId") { type = NavType.LongType },
+                    navArgument("routineId") { type = NavType.LongType }
+                )
+            ) { entry ->
+                val sid = entry.arguments?.getLong("sessionId") ?: return@composable
+                val rid = entry.arguments?.getLong("routineId") ?: return@composable
+                SessionLoggerScreen(
+                    vm = vm,
+                    sessionId = sid,
+                    routineId = rid,
+                    onFinish = { nav.popBackStack(Routes.WORKOUT, inclusive = false) }
+                )
             }
             composable(Routes.HISTORY) { HistoryScreen(vm = vm) }
             composable(Routes.CAPTURE) {

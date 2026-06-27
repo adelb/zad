@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!--
+      Edge-to-edge: window draws under the system bars. We then handle insets in
+      Compose so content never lives under the notch / nav bar. The visible
+      "sectors" disappear because the status / nav bars are transparent.
+    -->
     <style name="Theme.Zad" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowBackground">@color/night</item>
-        <item name="android:statusBarColor">@color/night</item>
-        <item name="android:windowLightStatusBar">false</item>
-        <item name="android:navigationBarColor">@color/paper</item>
+        <item name="android:windowBackground">@color/paper</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
 </resources>

@@ -3,6 +3,7 @@ package com.zad.app.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -20,28 +21,30 @@ import com.zad.app.data.ActivityLevel
 import com.zad.app.data.Goal
 import com.zad.app.data.Profile
 import com.zad.app.data.Sex
+import com.zad.app.ui.components.DobField
+import java.time.LocalDate
 
 @Composable
 fun OnboardingScreen(onFinish: (Profile) -> Unit) {
-    var age by remember { mutableStateOf("30") }
+    var dob by remember { mutableStateOf(LocalDate.now().minusYears(30)) }
     var height by remember { mutableStateOf("170") }
     var weight by remember { mutableStateOf("75") }
     var sex by remember { mutableStateOf(Sex.MALE) }
     var activity by remember { mutableStateOf(ActivityLevel.MODERATE) }
     var goal by remember { mutableStateOf(Goal.MAINTAIN) }
 
-    val ageNum = age.toIntOrNull()
     val hNum   = height.toIntOrNull()
     val wNum   = weight.toDoubleOrNull()
-    val valid  = (ageNum != null && ageNum in 10..100) &&
-                 (hNum != null && hNum in 120..230) &&
-                 (wNum != null && wNum in 30.0..250.0)
+    val valid  = (hNum != null && hNum in 120..230) &&
+                 (wNum != null && wNum in 30.0..250.0) &&
+                 dob.isBefore(LocalDate.now().minusYears(10))
 
-    val preview: Profile? = if (valid) Profile(ageNum!!, sex, hNum!!, wNum!!, activity, goal) else null
+    val preview: Profile? = if (valid) Profile(dob, sex, hNum!!, wNum!!, activity, goal) else null
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .statusBarsPadding()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 22.dp, vertical = 28.dp)
     ) {
@@ -53,15 +56,9 @@ fun OnboardingScreen(onFinish: (Profile) -> Unit) {
 
         Spacer(Modifier.height(24.dp))
 
+        DobField(value = dob, onChange = { dob = it })
+        Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedTextField(
-                value = age,
-                onValueChange = { age = it.filter(Char::isDigit).take(3) },
-                label = { Text(stringResource(R.string.onb_age)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true,
-                modifier = Modifier.weight(1f)
-            )
             OutlinedTextField(
                 value = height,
                 onValueChange = { height = it.filter(Char::isDigit).take(3) },
