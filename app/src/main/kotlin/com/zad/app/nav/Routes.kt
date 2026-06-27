@@ -10,6 +10,7 @@ object Routes {
     const val PROFILE = "profile"
     const val WEIGHT = "weight"
     const val WATER = "water"
+    const val WATCH = "watch_health"
     const val WORKOUT = "workout"
     const val ROUTINE_NEW = "routine/new"
     const val ROUTINE_DETAIL = "routine/{id}"

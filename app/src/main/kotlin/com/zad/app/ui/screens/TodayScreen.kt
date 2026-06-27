@@ -36,7 +36,8 @@ fun TodayScreen(
     onCapture: () -> Unit,
     onOpenProfile: () -> Unit = {},
     onOpenWater: () -> Unit = {},
-    onOpenWeight: () -> Unit = {}
+    onOpenWeight: () -> Unit = {},
+    onOpenWatch: () -> Unit = {}
 ) {
     val total by vm.todayTotal.collectAsStateWithLifecycle()
     val entries by vm.todayEntries.collectAsStateWithLifecycle()
@@ -102,7 +103,8 @@ fun TodayScreen(
         WatchLiveCard(
             hc = hc,
             workoutBurn = burnFromWorkouts,
-            onConnect = { hcLauncher.launch(vm.healthBridge.permissions) }
+            onConnect = { hcLauncher.launch(vm.healthBridge.permissions) },
+            onOpenDetails = onOpenWatch
         )
         Spacer(Modifier.height(12.dp))
 
@@ -310,12 +312,15 @@ private fun NetIntakeCard(balance: com.zad.app.ml.EnergyBalance) {
 private fun WatchLiveCard(
     hc: com.zad.app.health.HcReading,
     workoutBurn: Int,
-    onConnect: () -> Unit
+    onConnect: () -> Unit,
+    onOpenDetails: () -> Unit = {}
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceVariant,
         shape = RoundedCornerShape(20.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onOpenDetails)
     ) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

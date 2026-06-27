@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -56,15 +57,30 @@ class ZadViewModel(app: Application) : AndroidViewModel(app) {
     private val classifier = FoodClassifier(app)
     private val profileStore = ProfileStore(app)
     val healthBridge = com.zad.app.health.HealthConnectBridge(app)
+    private val watchPrefs = com.zad.app.health.WatchPrefs(app)
 
     private val _hc = MutableStateFlow(com.zad.app.health.HcReading())
-    val healthReading: StateFlow<com.zad.app.health.HcReading> = _hc.asStateFlow()
+    val healthReading: StateFlow<com.zad.app.health.HcReading> = combine(
+        _hc, watchPrefs.manualKcalToday, watchPrefs.manualStepsToday
+    ) { hc, manual, manualSteps ->
+        // Manual entry tops up whatever HC provided (additive on purpose —
+        // user might have HC giving some sources + their watch separately).
+        hc.copy(
+            manualKcal = manual,
+            steps = (hc.steps + manualSteps),
+            activeKcal = hc.activeKcal + manual
+        )
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, com.zad.app.health.HcReading())
 
     fun refreshHealthConnect() {
         viewModelScope.launch {
             _hc.value = runCatching { healthBridge.readToday() }
                 .getOrDefault(com.zad.app.health.HcReading())
         }
+    }
+
+    fun setManualWatch(kcal: Int, steps: Int) {
+        viewModelScope.launch { watchPrefs.setManual(kcal.coerceAtLeast(0), steps.coerceAtLeast(0)) }
     }
 
     val onboarded: StateFlow<Boolean?> = profileStore.onboarded

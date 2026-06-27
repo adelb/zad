@@ -113,7 +113,8 @@ fun ZadNavRoot() {
                     onCapture = { nav.navigate(Routes.CAPTURE) },
                     onOpenProfile = { nav.navigate(Routes.PROFILE) },
                     onOpenWater = { nav.navigate(Routes.WATER) },
-                    onOpenWeight = { nav.navigate(Routes.WEIGHT) }
+                    onOpenWeight = { nav.navigate(Routes.WEIGHT) },
+                    onOpenWatch = { nav.navigate(Routes.WATCH) }
                 )
             }
             composable(Routes.PROFILE) {
@@ -121,6 +122,9 @@ fun ZadNavRoot() {
             }
             composable(Routes.WEIGHT) { WeightScreen(vm = vm, onBack = { nav.popBackStack() }) }
             composable(Routes.WATER) { WaterScreen(vm = vm, onBack = { nav.popBackStack() }) }
+            composable(Routes.WATCH) {
+                com.zad.app.ui.screens.WatchScreen(vm = vm, onBack = { nav.popBackStack() })
+            }
             composable(Routes.WORKOUT) {
                 WorkoutScreen(
                     vm = vm,

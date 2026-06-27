@@ -24,7 +24,12 @@ data class HcReading(
     val exerciseMinutes: Int = 0,
     val granted: Boolean = false,
     val status: HcStatus = HcStatus.NOT_INSTALLED,
-    val lastUpdatedMs: Long = 0L
+    val lastUpdatedMs: Long = 0L,
+    /** Packages that wrote ANY record we read today — diagnostic only. */
+    val sources: Set<String> = emptySet(),
+    val error: String? = null,
+    /** Manual override entered by the user (e.g. typed from a Huawei watch). */
+    val manualKcal: Int = 0
 )
 
 class HealthConnectBridge(private val context: Context) {
@@ -44,21 +49,27 @@ class HealthConnectBridge(private val context: Context) {
     }
 
     private fun client(): HealthConnectClient? =
-        if (status() == HcStatus.AVAILABLE) HealthConnectClient.getOrCreate(context) else null
+        if (status() == HcStatus.AVAILABLE)
+            runCatching { HealthConnectClient.getOrCreate(context) }.getOrNull()
+        else null
 
     fun permissionContract() = PermissionController.createRequestPermissionResultContract()
 
     suspend fun hasPermissions(): Boolean {
         val c = client() ?: return false
-        return c.permissionController.getGrantedPermissions().containsAll(permissions)
+        return runCatching { c.permissionController.getGrantedPermissions() }
+            .getOrDefault(emptySet()).containsAll(permissions)
     }
 
-    /** Today's totals — pulled in parallel-ish, never throws. */
+    /** Today's totals + the list of source apps. Never throws — captures error in HcReading.error. */
     suspend fun readToday(): HcReading {
         val st = status()
         if (st != HcStatus.AVAILABLE) return HcReading(status = st)
-        val c = client() ?: return HcReading(status = st)
-        if (!c.permissionController.getGrantedPermissions().containsAll(permissions)) {
+        val c = client() ?: return HcReading(status = st, error = "client unavailable")
+
+        val granted = runCatching { c.permissionController.getGrantedPermissions() }
+            .getOrDefault(emptySet())
+        if (!granted.containsAll(permissions)) {
             return HcReading(status = st, granted = false)
         }
 
@@ -67,30 +78,45 @@ class HealthConnectBridge(private val context: Context) {
         val end = LocalDate.now().plusDays(1).atStartOfDay(zone).toInstant()
         val range = TimeRangeFilter.between(start, end)
 
-        val activeKcal = runCatching {
-            c.readRecords(ReadRecordsRequest(ActiveCaloriesBurnedRecord::class, range))
-                .records.sumOf { it.energy.inKilocalories }
-        }.getOrDefault(0.0)
+        val sources = mutableSetOf<String>()
+        var firstError: String? = null
+        fun captureError(t: Throwable) { if (firstError == null) firstError = t.message }
 
-        val totalKcal = runCatching {
-            c.readRecords(ReadRecordsRequest(TotalCaloriesBurnedRecord::class, range))
-                .records.sumOf { it.energy.inKilocalories }
-        }.getOrDefault(0.0)
+        var activeKcal = 0.0
+        var totalKcal = 0.0
+        var steps = 0L
+        var distance = 0.0
+        var exerciseMin = 0L
 
-        val steps = runCatching {
-            c.readRecords(ReadRecordsRequest(StepsRecord::class, range))
-                .records.sumOf { it.count.toLong() }
-        }.getOrDefault(0L)
+        runCatching {
+            val r = c.readRecords(ReadRecordsRequest(ActiveCaloriesBurnedRecord::class, range)).records
+            activeKcal = r.sumOf { it.energy.inKilocalories }
+            r.forEach { sources += it.metadata.dataOrigin.packageName }
+        }.onFailure(::captureError)
 
-        val distance = runCatching {
-            c.readRecords(ReadRecordsRequest(DistanceRecord::class, range))
-                .records.sumOf { it.distance.inMeters }
-        }.getOrDefault(0.0)
+        runCatching {
+            val r = c.readRecords(ReadRecordsRequest(TotalCaloriesBurnedRecord::class, range)).records
+            totalKcal = r.sumOf { it.energy.inKilocalories }
+            r.forEach { sources += it.metadata.dataOrigin.packageName }
+        }.onFailure(::captureError)
 
-        val exerciseMin = runCatching {
-            val rec = c.readRecords(ReadRecordsRequest(ExerciseSessionRecord::class, range)).records
-            rec.sumOf { java.time.Duration.between(it.startTime, it.endTime).toMinutes() }
-        }.getOrDefault(0L)
+        runCatching {
+            val r = c.readRecords(ReadRecordsRequest(StepsRecord::class, range)).records
+            steps = r.sumOf { it.count.toLong() }
+            r.forEach { sources += it.metadata.dataOrigin.packageName }
+        }.onFailure(::captureError)
+
+        runCatching {
+            val r = c.readRecords(ReadRecordsRequest(DistanceRecord::class, range)).records
+            distance = r.sumOf { it.distance.inMeters }
+            r.forEach { sources += it.metadata.dataOrigin.packageName }
+        }.onFailure(::captureError)
+
+        runCatching {
+            val r = c.readRecords(ReadRecordsRequest(ExerciseSessionRecord::class, range)).records
+            exerciseMin = r.sumOf { java.time.Duration.between(it.startTime, it.endTime).toMinutes() }
+            r.forEach { sources += it.metadata.dataOrigin.packageName }
+        }.onFailure(::captureError)
 
         return HcReading(
             activeKcal = activeKcal.toInt(),
@@ -100,7 +126,9 @@ class HealthConnectBridge(private val context: Context) {
             exerciseMinutes = exerciseMin.toInt(),
             granted = true,
             status = st,
-            lastUpdatedMs = System.currentTimeMillis()
+            lastUpdatedMs = System.currentTimeMillis(),
+            sources = sources,
+            error = firstError
         )
     }
 }
