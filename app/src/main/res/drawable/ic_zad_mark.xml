@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  In-app pouch mark. Same silhouette as the launcher, drawn in deep-night
+  on the cream/paper UI surface. Use as a small header brand mark next to
+  the wordmark زاد.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="40dp"
+    android:viewportWidth="64"
+    android:viewportHeight="80">
+
+    <path
+        android:pathData="M 28.6 18 Q 27 10 30.5 6 Q 34 8 35.6 18"
+        android:strokeColor="#0F1320"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M32,9 m-2.4,0 a2.4,2.4 0 1,0 4.8,0 a2.4,2.4 0 1,0 -4.8,0 Z"
+        android:fillColor="#0F1320" />
+    <path
+        android:pathData="M 22 22 Q 26 17 29 17 Q 32 17 35 18 Q 38 17 42 22"
+        android:strokeColor="#0F1320"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M 22 22 C 11 28, 8 42, 14 56 C 20 66, 38 70, 48 62 C 56 55, 56 38, 50 28 C 47 24, 44 22, 42 22"
+        android:strokeColor="#0F1320"
+        android:strokeWidth="3.4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M 22 32 Q 22.5 44 25 58"
+        android:strokeColor="#0F1320"
+        android:strokeAlpha="0.45"
+        android:strokeWidth="0.9"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M 42 30 Q 44 44 41 58"
+        android:strokeColor="#0F1320"
+        android:strokeAlpha="0.45"
+        android:strokeWidth="0.9"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M25.5,20.5 m-0.7,0 a0.7,0.7 0 1,0 1.4,0 a0.7,0.7 0 1,0 -1.4,0 Z"
+        android:fillColor="#0F1320"
+        android:fillAlpha="0.7" />
+    <path
+        android:pathData="M38.5,20.5 m-0.7,0 a0.7,0.7 0 1,0 1.4,0 a0.7,0.7 0 1,0 -1.4,0 Z"
+        android:fillColor="#0F1320"
+        android:fillAlpha="0.7" />
+</vector>

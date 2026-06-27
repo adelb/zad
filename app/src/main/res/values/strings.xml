@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="ar">
+    <string name="app_name">زاد</string>
+    <string name="tagline">حساب السعرات بصورة واحدة</string>
+
+    <!-- Meals -->
+    <string name="meal_breakfast">الفطور</string>
+    <string name="meal_lunch">الغداء</string>
+    <string name="meal_dinner">العشاء</string>
+    <string name="meal_snack">وجبة خفيفة</string>
+
+    <!-- Tabs -->
+    <string name="tab_today">يومي</string>
+    <string name="tab_capture">التقاط</string>
+    <string name="tab_history">السجل</string>
+
+    <!-- Camera -->
+    <string name="camera_permission_title">السماح بالكاميرا</string>
+    <string name="camera_permission_body">نحتاج إذن الكاميرا لتمييز طبقك وحساب سعراته.</string>
+    <string name="camera_permission_grant">السماح</string>
+    <string name="camera_hint">ضع البطاقة بجانب الطبق ثم صوّر</string>
+    <string name="camera_capture">صوّر</string>
+    <string name="camera_picker">من المعرض</string>
+
+    <!-- Reference card scale -->
+    <string name="scale_title">حدّد البطاقة</string>
+    <string name="scale_body">انقر على زوايا البطاقة الأربع لقياس الحجم</string>
+    <string name="scale_done">تمّ</string>
+    <string name="scale_reset">إعادة</string>
+    <string name="scale_undo">تراجع</string>
+
+    <!-- Result -->
+    <string name="result_title">النتيجة</string>
+    <string name="result_dish">الطبق</string>
+    <string name="result_weight">الوزن التقديري</string>
+    <string name="result_calories">السعرات</string>
+    <string name="result_grams">غرام</string>
+    <string name="result_kcal">سعرة</string>
+    <string name="result_low_confidence">الطبق غير مؤكد، أكّد الاسم</string>
+    <string name="result_change_dish">تغيير الطبق</string>
+    <string name="result_adjust_grams">تعديل الوزن</string>
+    <string name="result_add_question">هل تضيفها لوجبة اليوم؟</string>
+    <string name="result_add_to_breakfast">أضِف إلى الفطور</string>
+    <string name="result_add_to_lunch">أضِف إلى الغداء</string>
+    <string name="result_add_to_dinner">أضِف إلى العشاء</string>
+    <string name="result_add_to_snack">أضِف لوجبة خفيفة</string>
+    <string name="result_discard">تجاهل</string>
+    <string name="result_saved">تمت الإضافة</string>
+
+    <!-- Today -->
+    <string name="today_title">يومك</string>
+    <string name="today_total">إجمالي السعرات</string>
+    <string name="today_empty">لم تُضِف وجبة بعد</string>
+    <string name="today_empty_hint">صوّر طبقك لتبدأ</string>
+    <string name="today_per_meal">السعرات لكل وجبة</string>
+
+    <!-- History -->
+    <string name="history_title">سجلّك</string>
+    <string name="history_empty">السجل فارغ</string>
+
+    <!-- Common -->
+    <string name="cancel">إلغاء</string>
+    <string name="save">حفظ</string>
+    <string name="delete">حذف</string>
+    <string name="confirm">تأكيد</string>
+    <string name="back">رجوع</string>
+
+    <!-- Dish picker -->
+    <string name="picker_title">اختر الطبق</string>
+    <string name="picker_search">ابحث…</string>
+</resources>

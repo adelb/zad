@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Zad · مزود · the pouch
+  Cloth food-pouch silhouette in warm cream (#F2E6CC) on a deep-night ground.
+  Drawstring + knot + gather + body + two cloth folds + two stitch dots.
+  Drawn with intentional asymmetry: left side fuller than right, cord
+  slightly off-vertical. Same shape as the brand mark (logos/index.html).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <group
+        android:translateX="27.6"
+        android:translateY="14"
+        android:scaleX="0.825"
+        android:scaleY="0.825">
+
+        <!-- drawstring (off-vertical) -->
+        <path
+            android:pathData="M 28.6 18 Q 27 10 30.5 6 Q 34 8 35.6 18"
+            android:strokeColor="#F2E6CC"
+            android:strokeWidth="2.2"
+            android:strokeLineCap="round" />
+
+        <!-- knot at top -->
+        <path
+            android:pathData="M32,9 m-2.4,0 a2.4,2.4 0 1,0 4.8,0 a2.4,2.4 0 1,0 -4.8,0 Z"
+            android:fillColor="#F2E6CC" />
+
+        <!-- gather (cloth scrunched at the neck) -->
+        <path
+            android:pathData="M 22 22 Q 26 17 29 17 Q 32 17 35 18 Q 38 17 42 22"
+            android:strokeColor="#F2E6CC"
+            android:strokeWidth="2.6"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+
+        <!-- pouch body — egg-shaped, left fuller than right -->
+        <path
+            android:pathData="M 22 22 C 11 28, 8 42, 14 56 C 20 66, 38 70, 48 62 C 56 55, 56 38, 50 28 C 47 24, 44 22, 42 22"
+            android:strokeColor="#F2E6CC"
+            android:strokeWidth="3.4"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+
+        <!-- left cloth fold -->
+        <path
+            android:pathData="M 22 32 Q 22.5 44 25 58"
+            android:strokeColor="#F2E6CC"
+            android:strokeAlpha="0.45"
+            android:strokeWidth="1.1"
+            android:strokeLineCap="round" />
+
+        <!-- right cloth fold -->
+        <path
+            android:pathData="M 42 30 Q 44 44 41 58"
+            android:strokeColor="#F2E6CC"
+            android:strokeAlpha="0.45"
+            android:strokeWidth="1.1"
+            android:strokeLineCap="round" />
+
+        <!-- stitch dot · left -->
+        <path
+            android:pathData="M25.5,20.5 m-0.7,0 a0.7,0.7 0 1,0 1.4,0 a0.7,0.7 0 1,0 -1.4,0 Z"
+            android:fillColor="#F2E6CC"
+            android:fillAlpha="0.7" />
+
+        <!-- stitch dot · right -->
+        <path
+            android:pathData="M38.5,20.5 m-0.7,0 a0.7,0.7 0 1,0 1.4,0 a0.7,0.7 0 1,0 -1.4,0 Z"
+            android:fillColor="#F2E6CC"
+            android:fillAlpha="0.7" />
+    </group>
+</vector>

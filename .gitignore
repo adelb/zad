@@ -1,0 +1,28 @@
+# Gradle / build
+.gradle/
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+local.properties
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs / temp
+*.log
+dev.log
+dev.log.err
+
+# Keystores
+*.jks
+*.keystore
