@@ -62,11 +62,12 @@ class ZadViewModel(app: Application) : AndroidViewModel(app) {
     fun onPhotoReady(path: String) {
         viewModelScope.launch {
             _scan.update { it.copy(photoPath = path, processing = true, savedSuccessfully = false) }
-            val pred = withContext(Dispatchers.Default) {
-                val bmp = BitmapUtils.decodeOriented(path, maxDim = 1024)
-                    ?: return@withContext null
-                classifier.classify(bmp)
+            val bmp = withContext(Dispatchers.Default) {
+                BitmapUtils.decodeOriented(path, maxDim = 1024)
             }
+            val pred = if (bmp != null) {
+                runCatching { classifier.classifySuspend(bmp) }.getOrNull()
+            } else null
             val dish = pred?.dishId?.let(DishCatalog::byId) ?: DishCatalog.UNKNOWN
             val (g, kcal) = PortionEstimator.typical(dish)
             _scan.update {

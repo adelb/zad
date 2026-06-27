@@ -94,6 +94,10 @@ dependencies {
     // EXIF
     implementation("androidx.exifinterface:exifinterface:1.3.7")
 
+    // ML Kit on-device image labeling — bundled, works offline after install
+    implementation("com.google.mlkit:image-labeling:17.0.9")
+    implementation("com.google.android.gms:play-services-tasks:18.2.0")
+
     // Downloadable Google fonts
     implementation("androidx.compose.ui:ui-text-google-fonts:1.6.8")
 

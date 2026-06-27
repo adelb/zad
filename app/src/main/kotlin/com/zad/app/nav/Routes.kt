@@ -1,6 +1,7 @@
 package com.zad.app.nav
 
 object Routes {
+    const val SPLASH = "splash"
     const val TODAY = "today"
     const val CAPTURE = "capture"
     const val HISTORY = "history"

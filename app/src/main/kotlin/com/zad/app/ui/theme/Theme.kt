@@ -8,26 +8,26 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 
 private val ZadLight = lightColorScheme(
-    primary = Date500,
-    onPrimary = Sand50,
-    primaryContainer = Sand200,
-    onPrimaryContainer = Date700,
-    secondary = Olive500,
-    onSecondary = Sand50,
-    secondaryContainer = Sand100,
-    onSecondaryContainer = Olive700,
-    tertiary = Saffron500,
-    onTertiary = Sand50,
-    tertiaryContainer = Sand100,
-    onTertiaryContainer = Saffron700,
+    primary = Night,
+    onPrimary = Cream,
+    primaryContainer = Cream2,
+    onPrimaryContainer = Night,
+    secondary = Brass,
+    onSecondary = Cream,
+    secondaryContainer = Paper2,
+    onSecondaryContainer = BrassDeep,
+    tertiary = BrassDeep,
+    onTertiary = Cream,
+    tertiaryContainer = Paper2,
+    onTertiaryContainer = BrassDeep,
     background = Paper,
-    onBackground = Ink900,
+    onBackground = Ink,
     surface = Paper,
-    onSurface = Ink900,
-    surfaceVariant = Sand100,
-    onSurfaceVariant = Ink700,
-    outline = Sand200,
-    outlineVariant = Sand100
+    onSurface = Ink,
+    surfaceVariant = Paper2,
+    onSurfaceVariant = InkSoft,
+    outline = Hairline,
+    outlineVariant = Cream2
 )
 
 @Composable

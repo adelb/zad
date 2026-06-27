@@ -2,16 +2,17 @@ package com.zad.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Sand50  = Color(0xFFFBF6EC)
-val Sand100 = Color(0xFFF2E7CF)
-val Sand200 = Color(0xFFE5D2A8)
-val Date500 = Color(0xFF7A3E1F)
-val Date700 = Color(0xFF4E2611)
-val Olive500 = Color(0xFF5B6B3A)
-val Olive700 = Color(0xFF3F4B26)
-val Saffron500 = Color(0xFFC97B26)
-val Saffron700 = Color(0xFF9B5A14)
-val Ink900 = Color(0xFF1E1A14)
-val Ink700 = Color(0xFF3B342B)
-val Ink500 = Color(0xFF6B6056)
-val Paper  = Color(0xFFFFFAF0)
+// Brand tokens — same palette as the مزود mark
+val Night       = Color(0xFF0F1320)   // deep-night ground
+val Night2      = Color(0xFF171C2C)
+val Cream       = Color(0xFFF2E6CC)   // warm cream (silhouette colour)
+val Cream2      = Color(0xFFE6D5AE)
+val Paper       = Color(0xFFFBF6EC)   // app surface
+val Paper2      = Color(0xFFF4EAD2)
+val Brass       = Color(0xFFB68A4E)
+val BrassDeep   = Color(0xFF8C682A)
+val BrassGlow   = Color(0xFFD7B167)
+val Ink         = Color(0xFF1A1410)
+val InkSoft     = Color(0xFF3B342B)
+val InkMute     = Color(0xFF6B6056)
+val Hairline    = Color(0xFFE0D5B8)

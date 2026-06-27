@@ -2,94 +2,117 @@ package com.zad.app.ml
 
 import android.content.Context
 import android.graphics.Bitmap
-import org.tensorflow.lite.Interpreter
-import org.tensorflow.lite.support.common.FileUtil
-import org.tensorflow.lite.support.image.ImageProcessor
-import org.tensorflow.lite.support.image.TensorImage
-import org.tensorflow.lite.support.image.ops.ResizeOp
-import java.io.IOException
-import java.nio.ByteBuffer
-import kotlin.math.exp
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.label.ImageLabel
+import com.google.mlkit.vision.label.ImageLabeling
+import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 data class Prediction(val dishId: String, val nameAr: String, val confidence: Float)
 
 /**
- * Classifies a photo of food.
+ * Classifies a photo of food using ML Kit's on-device image labeler
+ * (a quantized MobileNet shipped with Play Services). The labeler returns
+ * generic English labels like "Food", "Rice", "Bread", "Salad"; we map
+ * those to a [Dish] in [DishCatalog] via a keyword table.
  *
- * Looks for `assets/food_classifier.tflite` + `assets/labels.txt` (one label per line,
- * each label matching a [Dish.id] in [DishCatalog]). If the model file is missing
- * (e.g. before the user drops in a trained model), classification falls back to
- * returning [DishCatalog.UNKNOWN] with low confidence so the rest of the flow still
- * works — the user can pick the dish manually.
+ * If nothing matches, we still return [DishCatalog.UNKNOWN] so the result
+ * screen opens normally and the user picks the dish manually — that's the
+ * same fallback the camera-only flow always has.
+ *
+ * No `.tflite` file to ship. Works offline after the first launch.
  */
-class FoodClassifier(private val context: Context) {
+class FoodClassifier(@Suppress("unused") context: Context) {
 
     companion object {
-        private const val MODEL_FILE = "food_classifier.tflite"
-        private const val LABELS_FILE = "labels.txt"
-        private const val INPUT_SIZE = 224
         const val LOW_CONFIDENCE_THRESHOLD = 0.55f
+        private const val MIN_LABEL_CONFIDENCE = 0.50f
     }
 
-    private var interpreter: Interpreter? = null
-    private var labels: List<String> = emptyList()
+    private val labeler = ImageLabeling.getClient(
+        ImageLabelerOptions.Builder()
+            .setConfidenceThreshold(MIN_LABEL_CONFIDENCE)
+            .build()
+    )
 
-    private val imageProcessor = ImageProcessor.Builder()
-        .add(ResizeOp(INPUT_SIZE, INPUT_SIZE, ResizeOp.ResizeMethod.BILINEAR))
-        .build()
+    suspend fun classifySuspend(bitmap: Bitmap): Prediction {
+        val labels = runLabeler(bitmap)
+        if (labels.isEmpty()) return Prediction(DishCatalog.UNKNOWN.id, DishCatalog.UNKNOWN.nameAr, 0f)
 
-    val isReady: Boolean get() = interpreter != null && labels.isNotEmpty()
-
-    fun load() {
-        if (isReady) return
-        try {
-            val model = FileUtil.loadMappedFile(context, MODEL_FILE)
-            interpreter = Interpreter(model)
-            labels = FileUtil.loadLabels(context, LABELS_FILE)
-        } catch (_: IOException) {
-            // Model not shipped yet — classifier will return UNKNOWN.
-            interpreter = null
-            labels = emptyList()
+        // Walk labels in confidence order; first one that maps to a dish wins.
+        val sorted = labels.sortedByDescending { it.confidence }
+        for (l in sorted) {
+            val dishId = LabelToDish.lookup(l.text) ?: continue
+            val dish = DishCatalog.byId(dishId) ?: continue
+            return Prediction(dish.id, dish.nameAr, l.confidence)
         }
-    }
 
-    fun classify(bitmap: Bitmap): Prediction {
-        load()
-        val interp = interpreter ?: return Prediction(
+        // Got labels but none matched our catalog — keep the top confidence
+        // for the "this looks like food but I'm not sure what" hint.
+        return Prediction(
             dishId = DishCatalog.UNKNOWN.id,
             nameAr = DishCatalog.UNKNOWN.nameAr,
-            confidence = 0f
+            confidence = sorted.first().confidence.coerceAtMost(0.5f)
         )
-
-        val input = TensorImage.fromBitmap(bitmap.copy(Bitmap.Config.ARGB_8888, false))
-            .let(imageProcessor::process)
-        val outputShape = interp.getOutputTensor(0).shape()
-        val numClasses = outputShape[outputShape.size - 1]
-        val output = Array(1) { FloatArray(numClasses) }
-        interp.run(input.buffer.rewindAsBuffer(), output)
-
-        val probs = softmaxIfNeeded(output[0])
-        val bestIdx = probs.indices.maxByOrNull { probs[it] } ?: return Prediction(
-            DishCatalog.UNKNOWN.id, DishCatalog.UNKNOWN.nameAr, 0f
-        )
-        val labelId = labels.getOrNull(bestIdx) ?: DishCatalog.UNKNOWN.id
-        val dish = DishCatalog.byId(labelId) ?: DishCatalog.UNKNOWN
-        return Prediction(dish.id, dish.nameAr, probs[bestIdx])
     }
 
-    private fun ByteBuffer.rewindAsBuffer(): ByteBuffer { rewind(); return this }
+    private suspend fun runLabeler(bitmap: Bitmap): List<ImageLabel> =
+        suspendCancellableCoroutine { cont ->
+            val input = InputImage.fromBitmap(bitmap.copy(Bitmap.Config.ARGB_8888, false), 0)
+            labeler.process(input)
+                .addOnSuccessListener { cont.resume(it) }
+                .addOnFailureListener { cont.resumeWithException(it) }
+        }
 
-    private fun softmaxIfNeeded(arr: FloatArray): FloatArray {
-        val sum = arr.sum()
-        if (sum in 0.99f..1.01f && arr.all { it in 0f..1f }) return arr
-        val max = arr.max()
-        val exps = FloatArray(arr.size) { exp((arr[it] - max).toDouble()).toFloat() }
-        val s = exps.sum()
-        return FloatArray(arr.size) { exps[it] / s }
-    }
+    fun close() = labeler.close()
+}
 
-    fun close() {
-        interpreter?.close()
-        interpreter = null
+/**
+ * Maps ML Kit's generic English labels onto our Arab-dish catalog.
+ *
+ * ML Kit's default labeler is trained on Open Images / general categories,
+ * so it won't say "kabsa" — it'll say "rice", "meat", "salad", "bread".
+ * We pick the most specific match we can and let the user override.
+ */
+private object LabelToDish {
+
+    private val map: List<Pair<Regex, String>> = listOf(
+        // Specific dishes
+        Regex("(?i)falafel")           to "falafel",
+        Regex("(?i)shawarma")          to "shawarma_chicken",
+        Regex("(?i)hummus|chickpea")   to "hummus",
+        Regex("(?i)kebab|skewer")      to "kebab",
+        Regex("(?i)pizza")             to "pizza_slice",
+        Regex("(?i)burger|hamburger")  to "burger_beef",
+        Regex("(?i)fries|french fr")   to "french_fries",
+        Regex("(?i)pasta|spaghetti|noodle") to "pasta_tomato",
+        Regex("(?i)omelette|scrambled|fried egg|egg") to "egg_omelette",
+        Regex("(?i)yogurt|labneh|cheese") to "yogurt_labneh",
+        Regex("(?i)kanafeh|knafeh|dessert|sweet|pastry|cake|donut") to "kanafia_fallback",
+
+        // Categories — broader buckets the catalog can answer
+        Regex("(?i)rice")              to "rice_white",
+        Regex("(?i)bread|naan|pita|loaf") to "bread_pita",
+        Regex("(?i)salad|vegetable|greens|lettuce|cucumber|tomato") to "salad_green",
+        Regex("(?i)meat|steak|beef|lamb|grill") to "mashawi",
+        Regex("(?i)chicken|poultry") to "shish_tawook",
+        Regex("(?i)fish|seafood") to "mashawi",
+        Regex("(?i)soup|stew|curry|broth") to "mulukhiyah",
+        Regex("(?i)bean|lentil|legume") to "foul_mudammas",
+        Regex("(?i)nut|almond|cashew|pistachio") to "nuts_mixed",
+        Regex("(?i)date|fruit|apple|banana|orange") to "fruit_apple",
+        Regex("(?i)juice|drink|beverage") to "juice_orange",
+        Regex("(?i)tea") to "tea_with_sugar",
+        Regex("(?i)coffee|espresso|cappuccino") to "coffee_arabic"
+    )
+
+    fun lookup(label: String): String? {
+        for ((re, id) in map) if (re.containsMatchIn(label)) {
+            // Map kanafia_fallback → kanafeh (we kept a friendlier ID)
+            return if (id == "kanafia_fallback") "kanafeh" else id
+        }
+        return null
     }
 }

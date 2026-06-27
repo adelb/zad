@@ -1,17 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Warm Arabian palette: dates, sand, olive, saffron -->
-    <color name="sand_50">#FBF6EC</color>
-    <color name="sand_100">#F2E7CF</color>
-    <color name="sand_200">#E5D2A8</color>
-    <color name="date_500">#7A3E1F</color>
-    <color name="date_700">#4E2611</color>
-    <color name="olive_500">#5B6B3A</color>
-    <color name="olive_700">#3F4B26</color>
-    <color name="saffron_500">#C97B26</color>
-    <color name="saffron_700">#9B5A14</color>
-    <color name="ink_900">#1E1A14</color>
-    <color name="ink_700">#3B342B</color>
-    <color name="ink_500">#6B6056</color>
-    <color name="paper">#FFFAF0</color>
+    <color name="night">#0F1320</color>
+    <color name="cream">#F2E6CC</color>
+    <color name="paper">#FBF6EC</color>
+    <color name="brass">#B68A4E</color>
 </resources>

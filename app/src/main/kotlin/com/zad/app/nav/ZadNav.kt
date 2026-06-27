@@ -25,6 +25,7 @@ import com.zad.app.ui.screens.CameraScreen
 import com.zad.app.ui.screens.HistoryScreen
 import com.zad.app.ui.screens.ResultScreen
 import com.zad.app.ui.screens.ScaleScreen
+import com.zad.app.ui.screens.SplashScreen
 import com.zad.app.ui.screens.TodayScreen
 import com.zad.app.vision.computeScaleMmPerPx
 import java.net.URLDecoder
@@ -38,7 +39,8 @@ fun ZadNavRoot() {
 
     Scaffold(
         bottomBar = {
-            val showTabs = currentRoute in listOf(Routes.TODAY, Routes.HISTORY, Routes.CAPTURE)
+            val showTabs = currentRoute in listOf(Routes.TODAY, Routes.HISTORY, Routes.CAPTURE) &&
+                    currentRoute != Routes.SPLASH
             if (showTabs) {
                 NavigationBar(containerColor = MaterialTheme.colorScheme.background) {
                     NavigationBarItem(
@@ -65,9 +67,16 @@ fun ZadNavRoot() {
     ) { padding ->
         NavHost(
             navController = nav,
-            startDestination = Routes.TODAY,
+            startDestination = Routes.SPLASH,
             modifier = Modifier.padding(padding)
         ) {
+            composable(Routes.SPLASH) {
+                SplashScreen(onDone = {
+                    nav.navigate(Routes.TODAY) {
+                        popUpTo(Routes.SPLASH) { inclusive = true }
+                    }
+                })
+            }
             composable(Routes.TODAY) {
                 TodayScreen(vm = vm, onCapture = { nav.navigate(Routes.CAPTURE) })
             }
